@@ -1,0 +1,72 @@
+# References: https://github.com/docker/awesome-compose/tree/master/postgresql-pgadmin
+
+# HOW TO RUN
+# cd into directory containing this docker-compose file:
+#
+# Execute the following code to spin up the containers
+# docker compose up -d
+#  -d runs docker compose in detatched mode
+
+# Execute the following code to spin down the docker compose file:
+# docker compose down -v
+#  -v option removes any created volumes
+#  NOTE: although -v is optional, it is recommended
+
+# Access postgres db from cli
+# 1. docker exec -it <container name> bash
+# 2. psql -U <POSTGRES_USER> <POSTGRES_DB>
+# 1st step accesses bash shell within the docker db container
+# 2nd step accesses psql db from within the terminal
+# NOTE: <POSTGRES_USER> & <POSTGRES_DB> are specified by the .env file
+# NOTE: To exit the bash cli, use "CTRL + d"
+
+# Access pgAdmin4 using web browser
+# 1. Navigate to http://localhost:<PGADMIN_PORT> (from .env file)
+# 2. You will be prompted to login with username and password.
+#    Use .env credentials <PGADMIN_DEFAULT_EMAIL> AND <PGADMIN_DEFAULT_PASSWORD>
+# 3. Add a "Name" to your database under the "General" tab
+# 4. Click on "Add New Server" in pgAdmin homepage
+# 5. In the "Connection" tab, enter the following information:
+#   a. Host name/address -- db
+#      (The name of database service defined in docker-composee)
+#   b. Port -- `5432` (default PostgreSQL port number)
+#   c. Maintenance database -- <POSTGRES_DB>
+#      (The name of the database specified in .env file)
+#   d. Username -- <POSTGRES_USER>
+#   e. Password -- <POSTGRES_PASSWORD>
+# 6. Click "Save" to save the server configuration
+# 7. Your PostgreSQL server should now appear under the "Servers" section in homepage
+# 8. Click on the server name to expand the database tree and view your databases, tables, etc.
+
+version: '3.8'
+
+services:
+  db:
+    container_name: postgres
+    image: postgres:latest
+    restart: always
+    ports:
+      - '${DB_PORT}:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB} #optional (specify default database instead of $POSTGRES_DB)
+    volumes:
+      - db-data:/var/lib/postgresql/data # Configure a named volume called "db-data"
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - '${PGADMIN_PORT}:80'
+    depends_on:
+      - db
+
+# Defining a top-level volumes key allows the listed volumes
+#  to be used with multiple services
+volumes:
+  db-data:
